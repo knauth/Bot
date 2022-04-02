@@ -89,7 +89,7 @@ order.sort(() => Math.random() - 0.5);
 
 function connectSocket() {
     Toastify({
-        text: 'Connecting to PlaceNIE server...',
+        text: 'Connecting to PlaceIE server...',
         duration: 10000
     }).showToast();
 
