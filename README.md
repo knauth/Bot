@@ -9,7 +9,7 @@ The bot for PlaceIE! This bot connects to the [command server](https://github.co
 Before you start, make sure your pixel lcooldown has expired!
 
 1. Install the [Tampermonkey](https://www.tampermonkey.net/) browser extension.
-2. Click on this link: [https://github.com/PlaceNL/Bot/raw/master/placenlbot.user.js](https://github.com/PlaceNL/Bot/raw/master/placenlbot.user .js). If all goes well, Tampermonkey should offer you to install a userscript. Click on **Install**.
+2. Click on this link: [https://github.com/knauth/Bot/raw/master/placenlbot.user.js](https://github.com/knauth/Bot/raw/master/placenlbot.user.js). If all goes well, Tampermonkey should offer you to install a userscript. Click on **Install**.
 3. Reload your **r/place** tab. If everything went well, you'll see "Get access token..." at the top right of your screen. The bot is now active, and will keep you informed of what it is doing via these notifications at the top right of your screen.
 
 ### Disadvantages of this bot
@@ -39,7 +39,7 @@ await getAccessToken()
 ### Installation Instructions
 
 1. Install [NodeJS](https://nodejs.org/).
-2. Download the bot from [this link](https://github.com/PlaceNL/Bot/archive/refs/heads/master.zip).
+2. Download the bot from [this link](https://github.com/knauth/Bot/archive/refs/heads/master.zip).
 3. Extract the bot to a folder somewhere on your computer.
 4. Open a command prompt/terminal in this folder
     Windows: Shift + Right mouse button in the folder -> Click on "Open Powershell here"
