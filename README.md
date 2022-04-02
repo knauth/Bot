@@ -22,7 +22,7 @@ Before you start, make sure your pixel lcooldown has expired!
 1. Go to [r/place](https://www.reddit.com/r/place/)
 2. Open the browser console (F12/Inspect element -> Click on console)
 3. Paste the following code and press enter:
-†
+```
 async function getAccessToken() {
 	const usingOldReddit = window.location.href.includes('new.reddit.com');
 	const url = usingOldReddit ? 'https://new.reddit.com/r/place/' : 'https://www.reddit.com/r/place/';
@@ -33,7 +33,7 @@ async function getAccessToken() {
 }
 
 await getAccessToken()
-†
+```
 4. The text between the quotes (`"`) is your access token.
 
 ### Installation Instructions
