@@ -233,7 +233,7 @@ function place(x, y, color) {
                             'y': y
                         },
                         'colorIndex': color,
-                        'canvasIndex': 0
+                        'canvasIndex': (x > 999 ? 1 : 0)
                     }
                 }
             },
@@ -298,7 +298,7 @@ async function getCurrentImageUrl(id = '0') {
             if (!parsed.payload || !parsed.payload.data || !parsed.payload.data.subscribe || !parsed.payload.data.subscribe.data) return;
 
             ws.close();
-            resolve(parsed.payload.data.subscribe.data.name);
+            resolve(parsed.payload.data.subscribe.data.name + `?noCache=${Date.now() * Math.random()}`);
         }
 
         ws.onerror = reject;
