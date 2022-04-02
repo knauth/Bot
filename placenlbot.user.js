@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         PlaceIE Bot
 // @namespace    https://github.com/knauth/Bot
-// @version      9
+// @version      10
 // @description  Irish bot for r/place!
 // @author       NoahvdAa
 // @match        https://www.reddit.com/r/place/*
