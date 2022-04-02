@@ -1,5 +1,5 @@
 // ==UserScript==
-// @name         PlaceNL Bot
+// @name         PlaceIE Bot
 // @namespace    https://github.com/knauth/Bot
 // @version      9
 // @description  De bot voor PlaceNL!
