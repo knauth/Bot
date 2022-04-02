@@ -23,7 +23,7 @@ var accessToken;
 var currentOrderCanvas = document.createElement('canvas');
 var currentOrderCtx = currentOrderCanvas.getContext('2d');
 var currentPlaceCanvas = document.createElement('canvas');
-var cnc_url = 'placeie.xyz'
+var cnc_url = 'mainuser.dev'
 
 const COLOR_MAPPINGS = {
     '#BE0039': 1,
