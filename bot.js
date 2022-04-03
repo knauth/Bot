@@ -71,7 +71,7 @@ function connectSocket() {
 
         switch (data.type.toLowerCase()) {
             case 'map':
-                console.log(`New map "${data.data}" (order: ${data.reason ? data.reason : 'connected to the server'})`)
+                console.log(`New map loaded (Update: ${data.reason ? data.reason : 'connected to server'})`)
                 currentOrders = await getMapFromUrl(`https://mainuser.dev/maps/${data.data}`);
                 hasOrders = true;
                 break;
@@ -81,8 +81,8 @@ function connectSocket() {
     };
 
     socket.onclose = function (e) {
-        console.warn(`PlaceIE server connection closed: ${e.reason}`)
-        console.error('Socket closed: ', e.reason);
+        console.warn(`PlaceIE server has disconnected: ${e.reason}`)
+        console.error('SocketError: ', e.reason);
         socket.close();
         setTimeout(connectSocket, 1000);
     };
@@ -98,7 +98,7 @@ async function attemptPlace() {
         const canvasUrl = await getCurrentImageUrl();
         currentMap = await getMapFromUrl(canvasUrl);
     } catch (e) {
-        console.warn('Error getting map: ', e);
+        console.warn('Error retrieving folder: ', e);
         setTimeout(attemptPlace, 15000); // probeer opnieuw in 15sec.
         return;
     }
@@ -128,17 +128,17 @@ async function attemptPlace() {
                 const nextPixel = error.extensions.nextAvailablePixelTs + 3000;
                 const nextPixelDate = new Date(nextPixel);
                 const delay = nextPixelDate.getTime() - Date.now();
-                console.log(`Place too early, placing next pixel in: ${nextPixelDate.toLocaleTimeString()}.`)
+                console.log(`Pixel posted too soon! Next pixel will be placed at ${nextPixelDate.toLocaleTimeString()}.`)
                 setTimeout(attemptPlace, delay);
             } else {
                 const nextPixel = data.data.act.data[0].data.nextAvailablePixelTimestamp + 3000;
                 const nextPixelDate = new Date(nextPixel);
                 const delay = nextPixelDate.getTime() - Date.now();
-                console.log(`Placing pixel at ${x}, ${y}! Placing next pixel in: ${nextPixelDate.toLocaleTimeString()}.`)
+                console.log(`Pixel posted at ${x}, ${y}! Next pixel will be placed at ${nextPixelDate.toLocaleTimeString()}.`)
                 setTimeout(attemptPlace, delay);
             }
         } catch (e) {
-            console.warn('Fout bij response analyseren', e);
+            console.warn('Analyze response error', e);
             setTimeout(attemptPlace, 10000);
         }
 
@@ -161,8 +161,8 @@ function place(x, y, color) {
 					'actionName': 'r/replace:set_pixel',
 					'PixelMessageData': {
 						'coordinate': {
-							'x': x,
-							'y': y
+							'x': x % 1000,
+							'y': y % 1000
 						},
 						'colorIndex': color,
 						'canvasIndex': 0
