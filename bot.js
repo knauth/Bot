@@ -22,7 +22,7 @@ let accessTokenHolders = [];
 let defaultAccessToken;
 
 if (redditSessionCookies.length > 4) {
-    console.warn("More than 4 reddit accounts per IP address is not recommended!!")
+    console.warn("More than 4 reddit accounts per IP address can result in a ban!!")
 }
 
 var socket;
@@ -239,6 +239,7 @@ async function attemptPlace(accessTokenHolder) {
                 const guidance = message === 'user is not logged in' ? 'Did you copy the "reddit_session" cookie correctly?' : '';
                 console.error(`[!!] Critical Error: ${message}. ${guidance}`);
                 console.error(`[!!] Fix this and restart the script`);
+                exit();
             }
         } else {
             const nextPixel = data.data.act.data[0].data.nextAvailablePixelTimestamp + 3000;
