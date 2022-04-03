@@ -140,7 +140,7 @@ function startPlacement() {
     }
 
     // Try to stagger pixel placement
-    const interval = 300 / accessTokenHolders.length;
+    const interval = 60 / accessTokenHolders.length;
     var delay = 0;
     for (const accessTokenHolder of accessTokenHolders) {
         setTimeout(() => attemptPlace(accessTokenHolder), delay * 1000);
@@ -407,3 +407,9 @@ function rgbToHex(r, g, b) {
 
 let rgbaOrderToHex = (i, rgbaOrder) =>
     rgbToHex(rgbaOrder[i * 4], rgbaOrder[i * 4 + 1], rgbaOrder[i * 4 + 2]);
+
+process.on('SIGINT', function() {
+    console.log( "\nGracefully shutting down from SIGINT (Ctrl-C)" );
+    server.close();
+    process.exit(0);
+});
