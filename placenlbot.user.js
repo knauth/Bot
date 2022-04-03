@@ -1,9 +1,9 @@
 // ==UserScript==
-// @name         PlaceNL Bot
-// @namespace    https://github.com/PlaceNL/Bot
+// @name         PlaceIE Bot
+// @namespace    https://github.com/PlaceIE/Bot
 // @version      20
-// @description  De bot voor PlaceNL!
-// @author       NoahvdAa
+// @description  Go PlaceIE!
+// @author       NoahvdAa. rolltime & Doggo404
 // @match        https://www.reddit.com/r/place/*
 // @match        https://new.reddit.com/r/place/*
 // @icon         https://www.google.com/s2/favicons?sz=64&domain=reddit.com
