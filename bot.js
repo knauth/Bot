@@ -112,10 +112,13 @@ async function attemptPlace(accessToken) {
         setTimeout(() => attemptPlace(accessToken), 2000); // probeer opnieuw in 2sec.
         return;
     }
-    var currentMap;
+    var currentMap0, currentMap1;
     try {
-        const canvasUrl = await getCurrentImageUrl(accessToken);
-        currentMap = await getMapFromUrl(canvasUrl);
+        const canvasUrl0 = await getCurrentImageUrl(accessToken, '0');
+        const canvasUrl1 = await getCurrentImageUrl(accessToken, '1');
+
+        currentMap0 = await getMapFromUrl(canvasUrl0);
+        currentMap1 = await getMapFromUrl(canvasUrl1);
     } catch (e) {
         console.warn('Error retrieving folder: ', e);
         setTimeout(() => attemptPlace(accessToken), 15000); // probeer opnieuw in 15sec.
@@ -123,11 +126,13 @@ async function attemptPlace(accessToken) {
     }
 
     const rgbaOrder = currentOrders.data;
-    const rgbaCanvas = currentMap.data;
+    const rgbaCanvas = [].concat(currentMap0.data, currentMap1.data);
 
     console.log(`Attempt place:`);
     for (const i of order) {
         // negeer lege order pixels.
+
+        const rgbaCanvasIndex = i * 4;
         
         if (rgbaOrder[(i * 4) + 3] === 0) continue;
 
@@ -137,8 +142,8 @@ async function attemptPlace(accessToken) {
         // Deze pixel klopt.
         if (hex === rgbToHex(rgbaCanvas[(i * 4)], rgbaCanvas[(i * 4) + 1], rgbaCanvas[(i * 4) + 2])) continue;
 
-        const x = i % 1000;
-        const y = Math.floor(i / 1000);
+        const x = i % 2000;
+        const y = Math.floor(i / 2000);
         console.log(`Trying to post pixel to ${x}, ${y}...`)
 
         const res = await place(x, y, getColour(hex), accessToken);
@@ -186,7 +191,7 @@ function place(x, y, color, accessToken) {
 							'y': y % 1000
 						},
 						'colorIndex': color,
-						'canvasIndex': 0
+						'canvasIndex': (x > 999 ? 1 : 0)
 					}
 				}
 			},
@@ -202,7 +207,7 @@ function place(x, y, color, accessToken) {
 	});
 }
 
-async function getCurrentImageUrl(accessToken) {
+async function getCurrentImageUrl(accessToken, id) {
 	return new Promise((resolve, reject) => {
 		const ws = new WebSocket('wss://gql-realtime-2.reddit.com/query', 'graphql-ws', {
         headers : {
@@ -218,7 +223,7 @@ async function getCurrentImageUrl(accessToken) {
 					'Authorization': `Bearer ${accessToken}`
 				}
 			}));
-
+            console.log(`Requesting canvas ${id}`)
 			ws.send(JSON.stringify({
 				'id': '1',
 				'type': 'start',
@@ -228,7 +233,7 @@ async function getCurrentImageUrl(accessToken) {
 							'channel': {
 								'teamOwner': 'AFD2022',
 								'category': 'CANVAS',
-								'tag': '0'
+								'tag': id
 							}
 						}
 					},
@@ -247,7 +252,7 @@ async function getCurrentImageUrl(accessToken) {
 			if (!parsed.payload || !parsed.payload.data || !parsed.payload.data.subscribe || !parsed.payload.data.subscribe.data) return;
 
 			ws.close();
-			resolve(parsed.payload.data.subscribe.data.name);
+			resolve(parsed.payload.data.subscribe.data.name + `?noCache=${Date.now() * Math.random()}`);
 		}
 
 
