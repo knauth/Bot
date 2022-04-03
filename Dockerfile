@@ -3,5 +3,6 @@ WORKDIR /usr/src/app
 COPY package*.json ./
 RUN npm ci
 COPY bot.js .
+COPY constants.js .
 USER node
 ENTRYPOINT ["node", "bot.js"]
