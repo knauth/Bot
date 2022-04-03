@@ -24,7 +24,7 @@ var hasOrders = false;
 var currentOrders;
 
 var order = [];
-for (var i = 0; i < 1000000; i++) {
+for (var i = 0; i < 2000000; i++) {
     order.push(i);
 }
 order.sort(() => Math.random() - 0.5);
