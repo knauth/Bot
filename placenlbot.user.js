@@ -26,34 +26,44 @@ var currentPlaceCanvas = document.createElement('canvas');
 var cnc_url = 'mainuser.dev'
 
 const COLOR_MAPPINGS = {
-    '#BE0039': 1, // Dark red
-    '#FF4500': 2, // Red
-    '#FFA800': 3, // Orange
-    '#FFD635': 4, // Yellow
-    '#00A368': 6, // Dark green
-    '#00CC78': 7, // Green
-    '#7EED56': 8, // Light green
-    '#00756F': 9, // Dark teal
-    '#009EAA': 10, // Teal
-    '#2450A4': 12, // Dark blue
-    '#3690EA': 13, // Blue
-    '#51E9F4': 14, // Light Blue
-    '#493AC1': 15, // Indigo
-    '#6A5CFF': 16, // Periwinkle
-    '#811E9F': 18, // Dark purple
-    '#B44AC0': 19, // Purple
-    '#FF3881': 22, // Pink
-    '#FF99AA': 23, // Light pink
-    '#6D482F': 24, // Dark brown
-    '#9C6926': 25, // Brown
-    '#000000': 27, // Black
-    '#898D90': 29, // Gray
-    '#D4D7D9': 30, // Light gray
-    '#FFFFFF': 31 // White
+    '#6D001A': 1,
+    '#BE0039': 2,
+    '#FF4500': 3,
+    '#FFA800': 4,  
+    '#FFD635': 5,
+    '#FFD635': 6,
+    '#00A368': 7,
+    '#00CC78': 8,
+    '#7EED56': 9,
+    '#00756F': 10,
+    '#009EAA': 11,
+    '#00CCC0': 12, 
+    '#2450A4': 13,
+    '#3690EA': 14,
+    '#51E9F4': 15, 
+    '#493AC1': 16, 
+    '#6A5CFF': 17, 
+    '#94B3FF': 18,
+    '#811E9F': 19,  
+    '#B44AC0': 20, 
+    '#E4ABFF': 21,
+    '#DE107F': 22, 
+    '#FF3881': 23, 
+    '#FF99AA': 24, 
+    '#6D482F': 25,
+    '#9C6926': 26,
+    '#FFB470': 27,
+    '#000000': 28,
+    '#515252': 29,
+    '#898D90': 30,
+    '#D4D7D9': 31,
+    '#FFFFFF' 32:
 };
 
+
+
 var order = [];
-for (var i = 0; i < 200000; i++) {
+for (var i = 0; i < 4000000; i++) {
     order.push(i);
 }
 order.sort(() => Math.random() - 0.5);
@@ -61,11 +71,11 @@ order.sort(() => Math.random() - 0.5);
 (async function () {
     GM_addStyle(GM_getResourceText('TOASTIFY_CSS'));
     currentOrderCanvas.width = 2000;
-    currentOrderCanvas.height = 1000;
+    currentOrderCanvas.height = 2000;
     currentOrderCanvas.style.display = 'none';
     currentOrderCanvas = document.body.appendChild(currentOrderCanvas);
     currentPlaceCanvas.width = 2000;
-    currentPlaceCanvas.height = 1000;
+    currentPlaceCanvas.height = 2000;
     currentPlaceCanvas.style.display = 'none';
     currentPlaceCanvas = document.body.appendChild(currentPlaceCanvas);
 
