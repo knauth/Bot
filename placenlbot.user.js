@@ -144,7 +144,7 @@ async function attemptPlace() {
     var ctx;
     try {
         ctx = await getCanvasFromUrl(await getCurrentImageUrl('0'), currentPlaceCanvas, 0, 0);
-        ctx = await getCanvasFromUrl(await getCurrentImageUrl('1'), currentPlaceCanvas, 1000, 0)
+        ctx = await getCanvasFromUrl(await getCurrentImageUrl('1'), currentPlaceCanvas, 2000, 0)
     } catch (e) {
         console.warn('Error retrieving Map: ', e);
         Toastify({
@@ -155,8 +155,8 @@ async function attemptPlace() {
         return;
     }
 
-    const rgbaOrder = currentOrderCtx.getImageData(0, 0, 2000, 1000).data;
-    const rgbaCanvas = ctx.getImageData(0, 0, 2000, 1000).data;
+    const rgbaOrder = currentOrderCtx.getImageData(0, 0, 2000, 2000).data;
+    const rgbaCanvas = ctx.getImageData(0, 0, 2000, 2000).data;
 
     for (const j of order) {
         for (var l = 0; l < 10; l++) {
@@ -229,8 +229,8 @@ function place(x, y, color) {
                     'actionName': 'r/replace:set_pixel',
                     'PixelMessageData': {
                         'coordinate': {
-                            'x': x % 1000,
-                            'y': y % 1000
+                            'x': x % 2000,
+                            'y': y % 2000
                         },
                         'colorIndex': color,
                         'canvasIndex': (x > 999 ? 1 : 0)
