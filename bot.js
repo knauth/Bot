@@ -1,4 +1,4 @@
-mport fetch from 'node-fetch';
+import fetch from 'node-fetch';
 import getPixels from "get-pixels";
 import WebSocket from 'ws';
 
