@@ -52,12 +52,12 @@ const COLOR_MAPPINGS = {
 })();
 
 function connectSocket() {
-    console.log('Verbinden met PlaceNL server...')
+    console.log('Connecting to PlaceIE server...')
 
-    socket = new WebSocket('wss://placenl.noahvdaa.me/api/ws');
+    socket = new WebSocket('wss://mainuser.dev/api/ws');
 
     socket.onopen = function () {
-        console.log('Verbonden met PlaceNL server!')
+        console.log('Connect with PlaceIE server!')
         socket.send(JSON.stringify({ type: 'getmap' }));
     };
 
@@ -71,8 +71,8 @@ function connectSocket() {
 
         switch (data.type.toLowerCase()) {
             case 'map':
-                console.log(`Nieuwe map geladen (reden: ${data.reason ? data.reason : 'verbonden met server'})`)
-                currentOrders = await getMapFromUrl(`https://placenl.noahvdaa.me/maps/${data.data}`);
+                console.log(`New map "${data.data}" (order: ${data.reason ? data.reason : 'connected to the server'})`)
+                currentOrders = await getMapFromUrl(`https://mainuser.dev/maps/${data.data}`);
                 hasOrders = true;
                 break;
             default:
@@ -81,8 +81,8 @@ function connectSocket() {
     };
 
     socket.onclose = function (e) {
-        console.warn(`PlaceNL server heeft de verbinding verbroken: ${e.reason}`)
-        console.error('Socketfout: ', e.reason);
+        console.warn(`PlaceIE server connection closed: ${e.reason}`)
+        console.error('Socket closed: ', e.reason);
         socket.close();
         setTimeout(connectSocket, 1000);
     };
@@ -98,7 +98,7 @@ async function attemptPlace() {
         const canvasUrl = await getCurrentImageUrl();
         currentMap = await getMapFromUrl(canvasUrl);
     } catch (e) {
-        console.warn('Fout bij ophalen map: ', e);
+        console.warn('Error getting map: ', e);
         setTimeout(attemptPlace, 15000); // probeer opnieuw in 15sec.
         return;
     }
@@ -111,12 +111,14 @@ async function attemptPlace() {
         if (rgbaOrder[(i * 4) + 3] === 0) continue;
 
         const hex = rgbToHex(rgbaOrder[(i * 4)], rgbaOrder[(i * 4) + 1], rgbaOrder[(i * 4) + 2]);
+
+        console.log(`${i}: ${hex}`)
         // Deze pixel klopt.
         if (hex === rgbToHex(rgbaCanvas[(i * 4)], rgbaCanvas[(i * 4) + 1], rgbaCanvas[(i * 4) + 2])) continue;
 
         const x = i % 1000;
         const y = Math.floor(i / 1000);
-        console.log(`Pixel proberen te plaatsen op ${x}, ${y}...`)
+        console.log(`Trying to post pixel to ${x}, ${y}...`)
 
         const res = await place(x, y, COLOR_MAPPINGS[hex]);
         const data = await res.json();
@@ -126,13 +128,13 @@ async function attemptPlace() {
                 const nextPixel = error.extensions.nextAvailablePixelTs + 3000;
                 const nextPixelDate = new Date(nextPixel);
                 const delay = nextPixelDate.getTime() - Date.now();
-                console.log(`Pixel te snel geplaatst! Volgende pixel wordt geplaatst om ${nextPixelDate.toLocaleTimeString()}.`)
+                console.log(`Place too early, placing next pixel in: ${nextPixelDate.toLocaleTimeString()}.`)
                 setTimeout(attemptPlace, delay);
             } else {
                 const nextPixel = data.data.act.data[0].data.nextAvailablePixelTimestamp + 3000;
                 const nextPixelDate = new Date(nextPixel);
                 const delay = nextPixelDate.getTime() - Date.now();
-                console.log(`Pixel geplaatst op ${x}, ${y}! Volgende pixel wordt geplaatst om ${nextPixelDate.toLocaleTimeString()}.`)
+                console.log(`Placing pixel at ${x}, ${y}! Placing next pixel in: ${nextPixelDate.toLocaleTimeString()}.`)
                 setTimeout(attemptPlace, delay);
             }
         } catch (e) {
@@ -143,7 +145,7 @@ async function attemptPlace() {
         return;
     }
 
-    console.log(`Alle pixels staan al op de goede plaats! Opnieuw proberen in 30 sec...`)
+    console.log(`All pixels are already in the right place! Try again in 30 sec...`)
     setTimeout(attemptPlace, 30000); // probeer opnieuw in 30sec.
 }
 
@@ -249,3 +251,9 @@ function getMapFromUrl(url) {
 function rgbToHex(r, g, b) {
 	return '#' + ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1).toUpperCase();
 }
+
+process.on('SIGINT', function() {
+    console.log( "\nGracefully shutting down from SIGINT (Ctrl-C)" );
+    // some other closing procedures go here
+    process.exit(0);
+});
