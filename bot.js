@@ -1,82 +1,158 @@
-import fetch from 'node-fetch';
+mport fetch from 'node-fetch';
 import getPixels from "get-pixels";
 import WebSocket from 'ws';
-import ndarray from "ndarray";
+
+const VERSION_NUMBER = 4;
+
+console.log(`PlaceIE headless client V${VERSION_NUMBER}`);
 
 const args = process.argv.slice(2);
 
-if (args.length != 1 && !process.env.ACCESS_TOKEN && !process.env.ACCESS_TOKENS) {
-    console.error("Missing access token.")
+//if (args.length != 1 && !process.env.ACCESS_TOKEN) {
+//    console.error("Missing access token.")
+//    process.exit(1);
+//}
+if (args.length != 1 && !process.env.REDDIT_SESSION) {
+    console.error("Missing reddit_session cookie.")
     process.exit(1);
 }
 
+let redditSessionCookies = (process.env.REDDIT_SESSION || args[0]).split(';');
+
+var hasTokens = false;
+
 let accessTokens;
-if (process.env.ACCESS_TOKENS) {
-    accessTokens = process.env.ACCESS_TOKENS.split(':');
-} else if (process.env.ACCESS_TOKEN) {
-    accessTokens = [ process.env.ACCESS_TOKEN ];
-} else {
-    accessTokens = args;
+let defaultAccessToken;
+
+if (redditSessionCookies.length > 4) {
+    console.warn("More than 4 reddit accounts per IP address is not recommended!!")
 }
 
 var socket;
-var hasOrders = false;
 var currentOrders;
-
-var order = [];
-for (var i = 0; i < 2000000; i++) {
-    order.push(i);
-}
-order.sort(() => Math.random() - 0.5);
-
+var currentOrderList;
 
 const COLOR_MAPPINGS = {
-	'#FF4500': 2,
-	'#FFA800': 3,
-	'#FFD635': 4,
-	'#00A368': 6,
-	'#7EED56': 8,
-	'#2450A4': 12,
-	'#3690EA': 13,
-	'#51E9F4': 14,
-	'#811E9F': 18,
-	'#B44AC0': 19,
-	'#FF99AA': 23,
-	'#9C6926': 25,
-	'#000000': 27,
-	'#898D90': 29,
-	'#D4D7D9': 30,
-	'#FFFFFF': 31
+	'#BE0039': 1,
+    '#FF4500': 2,
+    '#FFA800': 3,
+    '#FFD635': 4,
+    '#00A368': 6,
+    '#00CC78': 7,
+    '#7EED56': 8,
+    '#00756F': 9,
+    '#009EAA': 10,
+    '#2450A4': 12,
+    '#3690EA': 13,
+    '#51E9F4': 14,
+    '#493AC1': 15,
+    '#6A5CFF': 16,
+    '#811E9F': 18,
+    '#B44AC0': 19,
+    '#FF3881': 22,
+    '#FF99AA': 23,
+    '#6D482F': 24,
+    '#9C6926': 25,
+    '#000000': 27,
+    '#898D90': 29,
+    '#D4D7D9': 30,
+    '#FFFFFF': 31
 };
 
-function getColour(hex) {
-    const id = COLOR_MAPPINGS[hex];
-    if (id === undefined) {
-        throw new Error(`Unknown color ${hex}`);
+let rgbaJoin = (a1, a2, rowSize = 1000, cellSize = 4) => {
+    const rawRowSize = rowSize * cellSize;
+    const rows = a1.length / rawRowSize;
+    let result = new Uint8Array(a1.length + a2.length);
+    for (var row = 0; row < rows; row++) {
+        result.set(a1.slice(rawRowSize * row, rawRowSize * (row+1)), rawRowSize * 2 * row);
+        result.set(a2.slice(rawRowSize * row, rawRowSize * (row+1)), rawRowSize * (2 * row + 1));
     }
-    return id;
-}
+    return result;
+};
+
+let getRealWork = rgbaOrder => {
+    let order = [];
+    for (var i = 0; i < 2000000; i++) {
+        if (rgbaOrder[(i * 4) + 3] !== 0) {
+            order.push(i);
+        }
+    }
+    return order;
+};
+
+let getPendingWork = (work, rgbaOrder, rgbaCanvas) => {
+    let pendingWork = [];
+    for (const i of work) {
+        if (rgbaOrderToHex(i, rgbaOrder) !== rgbaOrderToHex(i, rgbaCanvas)) {
+            pendingWork.push(i);
+        }
+    }
+    return pendingWork;
+};
 
 (async function () {
-	connectSocket();
-    console.log(`Running ${accessTokens.length} clients:`)
-    for (let accessToken of accessTokens) {
-        attemptPlace(accessToken);
-    }
+    refreshTokens();
+    connectSocket();
+
+    startPlacement();
 
     setInterval(() => {
         if (socket) socket.send(JSON.stringify({ type: 'ping' }));
     }, 5000);
+    // Refresh the tokens every 30 minutes. Should be enough anyway.
+    setInterval(refreshTokens, 30 * 60 * 1000);
 })();
 
+function startPlacement() {
+    if (!hasTokens) {
+        // Try again in a second.
+        setTimeout(startPlacement, 1000);
+        return
+    }
+
+    // Try to stagger pixel placement
+    const interval = 300 / accessTokens.length;
+    var delay = 0;
+    for (const accessToken of accessTokens) {
+        setTimeout(() => attemptPlace(accessToken), delay * 1000);
+        delay += interval;
+    }
+}
+
+async function refreshTokens() {
+    let tokens = [];
+    for (const cookie of redditSessionCookies) {
+        const response = await fetch("https://www.reddit.com/r/place/", {
+            headers: {
+                cookie: `reddit_session=${cookie}`
+            }
+        });
+        const responseText = await response.text()
+
+        let token = responseText.split('\"accessToken\":\"')[1].split('"')[0];
+        tokens.push(token);
+    }
+
+    console.log("Refreshed tokens: ", tokens)
+
+    accessTokens = tokens;
+    defaultAccessToken = tokens[0];
+    hasTokens = true;
+}
+
 function connectSocket() {
-    console.log('Connecting to PlaceIE server...')
+    console.log('Connecting to the PlaceIE server...')
 
     socket = new WebSocket('wss://mainuser.dev/api/ws');
 
+    socket.onerror = function(e) {
+        console.error("Socket error: " + e.message)
+    }
+
     socket.onopen = function () {
-        console.log('Connect with PlaceIE server!')
+        console.log('Connected to PlaceIE server!')
         socket.send(JSON.stringify({ type: 'getmap' }));
+        socket.send(JSON.stringify({ type: 'brand', brand: `nodeheadlessV${VERSION_NUMBER}` }));
     };
 
     socket.onmessage = async function (message) {
@@ -89,9 +165,9 @@ function connectSocket() {
 
         switch (data.type.toLowerCase()) {
             case 'map':
-                console.log(`New map loaded (Update: ${data.reason ? data.reason : 'connected to server'})`)
+                console.log(`New Map Loaded (Update: ${data.reason ? data.reason : 'Connected to server'})`)
                 currentOrders = await getMapFromUrl(`https://mainuser.dev/maps/${data.data}`);
-                hasOrders = true;
+                currentOrderList = getRealWork(currentOrders.data);
                 break;
             default:
                 break;
@@ -99,85 +175,81 @@ function connectSocket() {
     };
 
     socket.onclose = function (e) {
-        console.warn(`PlaceIE server has disconnected: ${e.reason}`)
-        console.error('SocketError: ', e.reason);
+        console.warn(`PlaceNL server has disconnected: ${e.reason}`)
+        console.error('Socketerror: ', e.reason);
         socket.close();
         setTimeout(connectSocket, 1000);
     };
 }
 
 async function attemptPlace(accessToken) {
-    if (!hasOrders) {
-        console.log('Waiting for orders...')
-        setTimeout(() => attemptPlace(accessToken), 2000); // probeer opnieuw in 2sec.
+    let retry = () => attemptPlace(accessToken);
+    if (currentOrderList === undefined) {
+        setTimeout(retry, 2000); // try again in 2 sec.
         return;
     }
-    var currentMap0, currentMap1;
+    
+    var map0;
+    var map1;
     try {
-        const canvasUrl0 = await getCurrentImageUrl(accessToken, '0');
-        const canvasUrl1 = await getCurrentImageUrl(accessToken, '1');
-
-        currentMap0 = await getMapFromUrl(canvasUrl0);
-        currentMap1 = await getMapFromUrl(canvasUrl1);
+        map0 = await getMapFromUrl(await getCurrentImageUrl('0'))
+        map1 = await getMapFromUrl(await getCurrentImageUrl('1'));
     } catch (e) {
-        console.warn('Error retrieving folder: ', e);
-        setTimeout(() => attemptPlace(accessToken), 15000); // probeer opnieuw in 15sec.
+        console.warn('Error loading map: ', e);
+        setTimeout(retry, 15000); // Try again in 15sec.
         return;
     }
 
     const rgbaOrder = currentOrders.data;
-    const rgbaCanvas = [].concat(currentMap0.data, currentMap1.data);
+    const rgbaCanvas = rgbaJoin(map0.data, map1.data);
+    const work = getPendingWork(currentOrderList, rgbaOrder, rgbaCanvas);
 
-    console.log(`Attempt place:`);
-    for (const i of order) {
-        // negeer lege order pixels.
+    if (work.length === 0) {
+        console.log(`All pixels are already in the right place! Try again in 30 sec...`);
+        setTimeout(retry, 30000); // try again in 30sec.
+        return;
+    }
 
-        const rgbaCanvasIndex = i * 4;
-        
-        if (rgbaOrder[(i * 4) + 3] === 0) continue;
+    const percentComplete = 100 - Math.ceil(work.length * 100 / currentOrderList.length);
+    const workRemaining = work.length;
+    const idx = Math.floor(Math.random() * work.length);
+    const i = work[idx];
+    const x = i % 2000;
+    const y = Math.floor(i / 2000);
+    const hex = rgbaOrderToHex(i, rgbaOrder);
 
-        const hex = rgbToHex(rgbaOrder[(i * 4)], rgbaOrder[(i * 4) + 1], rgbaOrder[(i * 4) + 2]);
+    console.log(`Trying to post pixel at ${x}, ${y}... (${percentComplete}% compleet, nog ${workRemaining} over)`);
 
-        console.log(`${i}: ${hex}`)
-        // Deze pixel klopt.
-        if (hex === rgbToHex(rgbaCanvas[(i * 4)], rgbaCanvas[(i * 4) + 1], rgbaCanvas[(i * 4) + 2])) continue;
-
-        const x = i % 2000;
-        const y = Math.floor(i / 2000);
-        console.log(`Trying to post pixel to ${x}, ${y}...`)
-
-        const res = await place(x, y, getColour(hex), accessToken);
-        const data = await res.json();
-        try {
-            if (data.errors) {
-                const error = data.errors[0];
+    const res = await place(x, y, COLOR_MAPPINGS[hex], accessToken);
+    const data = await res.json();
+    try {
+        if (data.errors) {
+            const error = data.errors[0];
+            if (error.extensions && error.extensions.nextAvailablePixelTimestamp) {
                 const nextPixel = error.extensions.nextAvailablePixelTs + 3000;
                 const nextPixelDate = new Date(nextPixel);
                 const delay = nextPixelDate.getTime() - Date.now();
                 console.log(`Pixel posted too soon! Next pixel will be placed at ${nextPixelDate.toLocaleTimeString()}.`)
-                setTimeout(() => attemptPlace(accessToken), delay);
+                setTimeout(retry, delay);
             } else {
-                const nextPixel = data.data.act.data[0].data.nextAvailablePixelTimestamp + 3000;
-                const nextPixelDate = new Date(nextPixel);
-                const delay = nextPixelDate.getTime() - Date.now();
-                console.log(`Pixel posted at ${x}, ${y}! Next pixel will be placed at ${nextPixelDate.toLocaleTimeString()}.`)
-                setTimeout(() => attemptPlace(accessToken), delay);
+                console.error(`[!!] Critical Error: ${error.message}. Did you copy the 'reddit_session' cookie correctly?`);
+                console.error(`[!!] Fix this and restart the script`);
             }
-        } catch (e) {
-            console.warn('Analyze response error', e);
-            setTimeout(() => attemptPlace(accessToken), 10000);
+        } else {
+            const nextPixel = data.data.act.data[0].data.nextAvailablePixelTimestamp + 3000;
+            const nextPixelDate = new Date(nextPixel);
+            const delay = nextPixelDate.getTime() - Date.now();
+            console.log(`Pixel posted on ${x}, ${y}! Next pixel will be placed at ${nextPixelDate.toLocaleTimeString()}.`)
+            setTimeout(retry, delay);
         }
-
-        return;
+    } catch (e) {
+        console.warn('Analyze response error', e);
+        setTimeout(retry, 10000);
     }
-
-    console.log(`All pixels are already in the right place! Try again in 30 sec...`)
-    setTimeout(() => attemptPlace(accessToken), 30000); // probeer opnieuw in 30sec.
 }
 
-function place(x, y, color, accessToken) {
+function place(x, y, color, accessToken = defaultAccessToken) {
     socket.send(JSON.stringify({ type: 'placepixel', x, y, color }));
-    console.log("Placing pixel at (" + x + ", " + y + ") with color: " + color)
 	return fetch('https://gql-realtime-2.reddit.com/query', {
 		method: 'POST',
 		body: JSON.stringify({
@@ -207,7 +279,7 @@ function place(x, y, color, accessToken) {
 	});
 }
 
-async function getCurrentImageUrl(accessToken, id) {
+async function getCurrentImageUrl(id = '0') {
 	return new Promise((resolve, reject) => {
 		const ws = new WebSocket('wss://gql-realtime-2.reddit.com/query', 'graphql-ws', {
         headers : {
@@ -220,10 +292,10 @@ async function getCurrentImageUrl(accessToken, id) {
 			ws.send(JSON.stringify({
 				'type': 'connection_init',
 				'payload': {
-					'Authorization': `Bearer ${accessToken}`
+					'Authorization': `Bearer ${defaultAccessToken}`
 				}
 			}));
-            console.log(`Requesting canvas ${id}`)
+
 			ws.send(JSON.stringify({
 				'id': '1',
 				'type': 'start',
@@ -248,6 +320,10 @@ async function getCurrentImageUrl(accessToken, id) {
 			const { data } = message;
 			const parsed = JSON.parse(data);
 
+            if (parsed.type === 'connection_error') {
+                console.error(`[!!] Could not load /r/place map ${parsed.payload.message}. Is the access token still valid?`);
+            }
+
 			// TODO: ew
 			if (!parsed.payload || !parsed.payload.data || !parsed.payload.data.subscribe || !parsed.payload.data.subscribe.data) return;
 
@@ -268,7 +344,6 @@ function getMapFromUrl(url) {
                 reject()
                 return
             }
-            console.log("got pixels", pixels.shape.slice())
             resolve(pixels)
         })
     });
@@ -278,8 +353,5 @@ function rgbToHex(r, g, b) {
 	return '#' + ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1).toUpperCase();
 }
 
-process.on('SIGINT', function() {
-    console.log( "\nGracefully shutting down from SIGINT (Ctrl-C)" );
-    // some other closing procedures go here
-    process.exit(0);
-});
+let rgbaOrderToHex = (i, rgbaOrder) =>
+    rgbToHex(rgbaOrder[i * 4], rgbaOrder[i * 4 + 1], rgbaOrder[i * 4 + 2]);
