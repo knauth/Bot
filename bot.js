@@ -5,12 +5,19 @@ import ndarray from "ndarray";
 
 const args = process.argv.slice(2);
 
-if (args.length != 1 && !process.env.ACCESS_TOKEN) {
+if (args.length != 1 && !process.env.ACCESS_TOKEN && !process.env.ACCESS_TOKENS) {
     console.error("Missing access token.")
     process.exit(1);
 }
 
-let accessToken = process.env.ACCESS_TOKEN || args[0];
+let accessTokens;
+if (process.env.ACCESS_TOKENS) {
+    accessTokens = process.env.ACCESS_TOKENS.split(':');
+} else if (process.env.ACCESS_TOKEN) {
+    accessTokens = [ process.env.ACCESS_TOKEN ];
+} else {
+    accessTokens = args;
+}
 
 var socket;
 var hasOrders = false;
@@ -42,9 +49,20 @@ const COLOR_MAPPINGS = {
 	'#FFFFFF': 31
 };
 
+function getColour(hex) {
+    const id = COLOR_MAPPINGS[hex];
+    if (id === undefined) {
+        throw new Error(`Unknown color ${hex}`);
+    }
+    return id;
+}
+
 (async function () {
 	connectSocket();
-    attemptPlace();
+    console.log(`Running ${accessTokens.length} clients:`)
+    for (let accessToken of accessTokens) {
+        attemptPlace(accessToken);
+    }
 
     setInterval(() => {
         if (socket) socket.send(JSON.stringify({ type: 'ping' }));
@@ -88,26 +106,29 @@ function connectSocket() {
     };
 }
 
-async function attemptPlace() {
+async function attemptPlace(accessToken) {
     if (!hasOrders) {
-        setTimeout(attemptPlace, 2000); // probeer opnieuw in 2sec.
+        console.log('Waiting for orders...')
+        setTimeout(() => attemptPlace(accessToken), 2000); // probeer opnieuw in 2sec.
         return;
     }
     var currentMap;
     try {
-        const canvasUrl = await getCurrentImageUrl();
+        const canvasUrl = await getCurrentImageUrl(accessToken);
         currentMap = await getMapFromUrl(canvasUrl);
     } catch (e) {
         console.warn('Error retrieving folder: ', e);
-        setTimeout(attemptPlace, 15000); // probeer opnieuw in 15sec.
+        setTimeout(() => attemptPlace(accessToken), 15000); // probeer opnieuw in 15sec.
         return;
     }
 
     const rgbaOrder = currentOrders.data;
     const rgbaCanvas = currentMap.data;
 
+    console.log(`Attempt place:`);
     for (const i of order) {
         // negeer lege order pixels.
+        
         if (rgbaOrder[(i * 4) + 3] === 0) continue;
 
         const hex = rgbToHex(rgbaOrder[(i * 4)], rgbaOrder[(i * 4) + 1], rgbaOrder[(i * 4) + 2]);
@@ -120,7 +141,7 @@ async function attemptPlace() {
         const y = Math.floor(i / 1000);
         console.log(`Trying to post pixel to ${x}, ${y}...`)
 
-        const res = await place(x, y, COLOR_MAPPINGS[hex]);
+        const res = await place(x, y, getColour(hex), accessToken);
         const data = await res.json();
         try {
             if (data.errors) {
@@ -129,27 +150,27 @@ async function attemptPlace() {
                 const nextPixelDate = new Date(nextPixel);
                 const delay = nextPixelDate.getTime() - Date.now();
                 console.log(`Pixel posted too soon! Next pixel will be placed at ${nextPixelDate.toLocaleTimeString()}.`)
-                setTimeout(attemptPlace, delay);
+                setTimeout(() => attemptPlace(accessToken), delay);
             } else {
                 const nextPixel = data.data.act.data[0].data.nextAvailablePixelTimestamp + 3000;
                 const nextPixelDate = new Date(nextPixel);
                 const delay = nextPixelDate.getTime() - Date.now();
                 console.log(`Pixel posted at ${x}, ${y}! Next pixel will be placed at ${nextPixelDate.toLocaleTimeString()}.`)
-                setTimeout(attemptPlace, delay);
+                setTimeout(() => attemptPlace(accessToken), delay);
             }
         } catch (e) {
             console.warn('Analyze response error', e);
-            setTimeout(attemptPlace, 10000);
+            setTimeout(() => attemptPlace(accessToken), 10000);
         }
 
         return;
     }
 
     console.log(`All pixels are already in the right place! Try again in 30 sec...`)
-    setTimeout(attemptPlace, 30000); // probeer opnieuw in 30sec.
+    setTimeout(() => attemptPlace(accessToken), 30000); // probeer opnieuw in 30sec.
 }
 
-function place(x, y, color) {
+function place(x, y, color, accessToken) {
     socket.send(JSON.stringify({ type: 'placepixel', x, y, color }));
     console.log("Placing pixel at (" + x + ", " + y + ") with color: " + color)
 	return fetch('https://gql-realtime-2.reddit.com/query', {
@@ -181,7 +202,7 @@ function place(x, y, color) {
 	});
 }
 
-async function getCurrentImageUrl() {
+async function getCurrentImageUrl(accessToken) {
 	return new Promise((resolve, reject) => {
 		const ws = new WebSocket('wss://gql-realtime-2.reddit.com/query', 'graphql-ws', {
         headers : {
