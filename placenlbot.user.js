@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         PlaceIE Bot
-// @namespace    https://github.com/PlaceIE/Bot
+// @namespace    https://github.com/knauth/Bot
 // @version      20
 // @description  Go PlaceIE!
 // @author       NoahvdAa. rolltime & Doggo404
