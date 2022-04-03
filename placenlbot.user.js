@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         PlaceIE Bot
 // @namespace    https://github.com/knauth/Bot
-// @version      10
+// @version      11
 // @description  Irish bot for r/place!
 // @author       NoahvdAa
 // @match        https://www.reddit.com/r/place/*
@@ -26,30 +26,30 @@ var currentPlaceCanvas = document.createElement('canvas');
 var cnc_url = 'mainuser.dev'
 
 const COLOR_MAPPINGS = {
-    '#BE0039': 1,
-    '#FF4500': 2,
-    '#FFA800': 3,
-    '#FFD635': 4,
-    '#00A368': 6,
-    '#00CC78': 7,
-    '#7EED56': 8,
-    '#00756F': 9,
-    '#009EAA': 10,
-    '#2450A4': 12,
-    '#3690EA': 13,
-    '#51E9F4': 14,
-    '#493AC1': 15,
-    '#6A5CFF': 16,
-    '#811E9F': 18,
-    '#B44AC0': 19,
-    '#FF3881': 22,
-    '#FF99AA': 23,
-    '#6D482F': 24,
-    '#9C6926': 25,
-    '#000000': 27,
-    '#898D90': 29,
-    '#D4D7D9': 30,
-    '#FFFFFF': 31
+    '#BE0039': 1, // Dark red
+    '#FF4500': 2, // Red
+    '#FFA800': 3, // Orange
+    '#FFD635': 4, // Yellow
+    '#00A368': 6, // Dark green
+    '#00CC78': 7, // Green
+    '#7EED56': 8, // Light green
+    '#00756F': 9, // Dark teal
+    '#009EAA': 10, // Teal
+    '#2450A4': 12, // Dark blue
+    '#3690EA': 13, // Blue
+    '#51E9F4': 14, // Light Blue
+    '#493AC1': 15, // Indigo
+    '#6A5CFF': 16, // Periwinkle
+    '#811E9F': 18, // Dark purple
+    '#B44AC0': 19, // Purple
+    '#FF3881': 22, // Pink
+    '#FF99AA': 23, // Light pink
+    '#6D482F': 24, // Dark brown
+    '#9C6926': 25, // Brown
+    '#000000': 27, // Black
+    '#898D90': 29, // Gray
+    '#D4D7D9': 30, // Light gray
+    '#FFFFFF': 31 // White
 };
 
 var order = [];
@@ -138,7 +138,7 @@ function connectSocket() {
 
 async function attemptPlace() {
     if (!hasOrders) {
-        setTimeout(attemptPlace, 2000); // probeer opnieuw in 2sec.
+        setTimeout(attemptPlace, 2000); // Try again in 2 seconds
         return;
     }
     var ctx;
@@ -151,7 +151,7 @@ async function attemptPlace() {
             text: 'Error retrieving map. Try again in 10 sec...',
             duration: 10000
         }).showToast();
-        setTimeout(attemptPlace, 10000); // probeer opnieuw in 10sec.
+        setTimeout(attemptPlace, 10000); // Try again in 10 seconds
         return;
     }
 
@@ -161,11 +161,11 @@ async function attemptPlace() {
     for (const j of order) {
         for (var l = 0; l < 10; l++) {
             const i = (j * 10) + l;
-            // negeer lege order pixels.
+            // Ignore empty pixels
             if (rgbaOrder[(i * 4) + 3] === 0) continue;
 
             const hex = rgbToHex(rgbaOrder[(i * 4)], rgbaOrder[(i * 4) + 1], rgbaOrder[(i * 4) + 2]);
-            // Deze pixel klopt.
+            // This pixel is correct
             if (hex === rgbToHex(rgbaCanvas[(i * 4)], rgbaCanvas[(i * 4) + 1], rgbaCanvas[(i * 4) + 2])) continue;
 
             const x = i % 2000;
@@ -199,7 +199,7 @@ async function attemptPlace() {
                     setTimeout(attemptPlace, delay);
                 }
             } catch (e) {
-                console.warn('Fout bij response analyseren', e);
+                console.warn('Analyze response error', e);
                 Toastify({
                     text: `Analyze response error: ${e}.`,
                     duration: 10000
@@ -215,7 +215,7 @@ async function attemptPlace() {
         text: `All pixels are already in the right place! Try again in 30 sec...`,
         duration: 30000
     }).showToast();
-    setTimeout(attemptPlace, 30000); // probeer opnieuw in 30sec.
+    setTimeout(attemptPlace, 30000); // Try again in 30 seconds
 }
 
 function place(x, y, color) {

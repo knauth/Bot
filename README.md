@@ -1,12 +1,12 @@
 # PlaceIE Bot
 
-The bot for PlaceIE! This bot connects to the [command server](https://github.com/PlaceNL/Commando) and gets an order from it. You can view the order history [here](https://placenl.noahvdaa.me/).
+The bot for PlaceIE! This bot connects to the [command server](https://github.com/knauth/commando) and gets an order from it. You can view the order history [here](https://mainuser.dev).
 
 ## User script bot
 
 ### Installation Instructions
 
-Before you start, make sure your pixel lcooldown has expired!
+Before you start, make sure your pixel cooldown has expired!
 
 1. Install the [Tampermonkey](https://www.tampermonkey.net/) browser extension.
 2. Click on this link: [https://github.com/knauth/Bot/raw/master/placenlbot.user.js](https://github.com/knauth/Bot/raw/master/placenlbot.user.js). If all goes well, Tampermonkey should offer you to install a userscript. Click on **Install**.
