@@ -121,7 +121,7 @@ function connectSocket() {
         duration: DEFAULT_TOAST_DURATION_MS
     }).showToast();
 
-    socket = new WebSocket('wss://${cnc_url}/api/ws');
+    socket = new WebSocket(`wss://${cnc_url}/api/ws`);
 
     socket.onopen = function () {
         Toastify({
