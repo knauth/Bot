@@ -239,7 +239,7 @@ async function attemptPlace(accessTokenHolder) {
                 const guidance = message === 'user is not logged in' ? 'Did you copy the "reddit_session" cookie correctly?' : '';
                 console.error(`[!!] Critical Error: ${message}. ${guidance}`);
                 console.error(`[!!] Fix this and restart the script`);
-                exit();
+                process.exit(22);
             }
         } else {
             const nextPixel = data.data.act.data[0].data.nextAvailablePixelTimestamp + 3000;
