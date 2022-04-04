@@ -288,7 +288,7 @@ async function attemptPlace(accessTokenHolder) {
             if (error.extensions && error.extensions.nextAvailablePixelTs) {
                 const nextPixel = error.extensions.nextAvailablePixelTs + 3000;
                 const nextPixelDate = new Date(nextPixel);
-                const delay = 3000;
+                const delay = 300000;
                 console.log(`Pixel te snel geplaatst! Volgende pixel wordt geplaatst om ${nextPixelDate.toLocaleTimeString()}.`)
                 setTimeout(retry, delay);
             } else {
