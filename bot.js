@@ -4,6 +4,7 @@ import WebSocket from 'ws';
 import { COLOR_MAPPINGS } from './constants.js';
 
 const VERSION_NUMBER = 6;
+const cnc_url='mainuser.dev'
 
 console.log(`PlaceIE headless client V${VERSION_NUMBER}`);
 
